@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Version Checker - V1">
+    <meta name="author" content="DevOps Team">
+    <title>Version Checker - V1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            animation: fadeIn 2s ease-in-out;
+        }
+
+        .version-text {
+            font-size: 15rem;
+            font-weight: bold;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            letter-spacing: 0.1em;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        .subtitle {
+            font-size: 2rem;
+            margin-top: 2rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .timestamp {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            }
+            50% {
+                transform: scale(1.05);
+                text-shadow: 0 0 50px rgba(255, 255, 255, 0.5);
+            }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .version-text {
+                font-size: 8rem;
+            }
+            .subtitle {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .version-text {
+                font-size: 5rem;
+            }
+            .subtitle {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="version-text">V1</div>
+        <div class="subtitle">Version Checker</div>
+    </div>
+    
+    <div class="timestamp">
+        Built: <span id="build-time"></span>
+    </div>
+
+    <script>
+        // Display build timestamp
+        document.getElementById('build-time').textContent = new Date().toISOString();
+        
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const versionText = document.querySelector('.version-text');
+            
+            versionText.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.1)';
+            });
+            
+            versionText.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html> 
