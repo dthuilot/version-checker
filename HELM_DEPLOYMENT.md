@@ -78,7 +78,25 @@ make helm-test
 
 ## 🔄 Deployment Strategies
 
-### Blue-Green Deployment (Default)
+### Canary Deployment (Default)
+
+- **Gradual Rollout**: Traffic slowly shifted to new version
+- **Risk Mitigation**: Limited blast radius during deployment
+- **Progressive Analysis**: Continuous monitoring at each step
+- **Automated Steps**: Mix of manual approvals and auto-progression
+
+```yaml
+rollouts:
+  strategy: canary
+  canary:
+    steps:
+    - setWeight: 20    # 20% traffic to new version
+    - pause: {}        # Manual approval
+    - setWeight: 40    # 40% traffic to new version
+    - pause: {duration: 10}  # Auto-proceed after 10s
+```
+
+### Blue-Green Deployment
 
 - **Zero Downtime**: New version deployed alongside current version
 - **Manual Promotion**: Requires manual approval to switch traffic
@@ -91,23 +109,6 @@ rollouts:
   blueGreen:
     autoPromotionEnabled: false  # Manual approval required
     scaleDownDelaySeconds: 30
-```
-
-### Canary Deployment
-
-- **Gradual Rollout**: Traffic slowly shifted to new version
-- **Risk Mitigation**: Limited blast radius during deployment
-- **Progressive Analysis**: Continuous monitoring at each step
-
-```yaml
-rollouts:
-  strategy: canary
-  canary:
-    steps:
-    - setWeight: 20    # 20% traffic to new version
-    - pause: {}        # Manual approval
-    - setWeight: 40    # 40% traffic to new version
-    - pause: {duration: 10}  # Auto-proceed after 10s
 ```
 
 ## 📊 Monitoring and Analysis
@@ -164,8 +165,11 @@ kubectl patch application version-checker -n argocd --type='json' \
 # Monitor rollout progress
 kubectl get rollouts -n version-checker -w
 
-# Promote when ready (Blue-Green)
+# Promote when ready (Canary - advance to next step)
 kubectl argo rollouts promote version-checker -n version-checker
+
+# Skip remaining steps and complete rollout
+kubectl argo rollouts promote version-checker -n version-checker --full
 ```
 
 ## 🔧 Configuration
@@ -218,7 +222,7 @@ spec:
         - name: image.tag
           value: "1.0.0"
         - name: rollouts.strategy
-          value: "blueGreen"
+          value: "canary"
 ```
 
 ## 🔒 Security Features
@@ -266,16 +270,35 @@ autoscaling:
    kubectl describe application version-checker -n argocd
    ```
 
+### Canary Deployment Commands
+
+```bash
+# Check canary rollout status and traffic weights
+kubectl argo rollouts get rollout version-checker -n version-checker
+
+# Promote to next canary step
+kubectl argo rollouts promote version-checker -n version-checker
+
+# Skip all remaining steps and complete rollout
+kubectl argo rollouts promote version-checker -n version-checker --full
+
+# Abort canary and rollback
+kubectl argo rollouts abort version-checker -n version-checker
+
+# Set traffic weight manually (for testing)
+kubectl argo rollouts set image version-checker version-checker=version-checker:v1.1.0 -n version-checker
+```
+
 ### Debug Commands
 
 ```bash
 # Check all resources
 kubectl get all -n version-checker
 
-# View rollout status
-kubectl get rollouts -n version-checker
+# View rollout status with traffic details
+kubectl argo rollouts get rollout version-checker -n version-checker --watch
 
-# Check pod logs
+# Check pod logs for both versions during canary
 kubectl logs -l app.kubernetes.io/name=version-checker -n version-checker
 
 # Port forward for testing

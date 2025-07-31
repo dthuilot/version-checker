@@ -80,7 +80,7 @@ affinity: {}
 # ArgoCD Rollouts configuration
 rollouts:
   enabled: true
-  strategy: blueGreen
+  strategy: canary
   # Alternative: canary
   blueGreen:
     # Service which the rollout modifies as the active service.

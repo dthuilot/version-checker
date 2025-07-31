@@ -60,23 +60,33 @@ kubectl get rollouts -n version-checker
 
 ## Configuration Options
 
-### Blue-Green Deployment (Default)
+### Canary Deployment (Default)
 
-The application is configured for Blue-Green deployments by default:
+The application is configured for Canary deployments by default:
 
-- **Active Service**: `version-checker`
-- **Preview Service**: `version-checker-preview`
-- **Auto Promotion**: Disabled (manual approval required)
-- **Analysis**: Success rate and response time analysis
+- **Progressive Traffic Shifting**: 20% → 40% → 60% → 80% → 100%
+- **Automated Steps**: Some steps auto-proceed, others require manual approval
+- **Risk Mitigation**: Limited blast radius during deployment
+- **Analysis**: Continuous monitoring at each traffic percentage
 
-### Canary Deployment
+### Blue-Green Deployment
 
-To switch to Canary deployment, update the Helm values:
+To switch to Blue-Green deployment, update the Helm values:
 
 ```yaml
 rollouts:
-  strategy: canary
+  strategy: blueGreen
 ```
+
+### Canary Deployment Steps
+
+The default canary configuration includes:
+
+1. **20% Traffic**: Manual approval required
+2. **40% Traffic**: Auto-proceed after 10 seconds  
+3. **60% Traffic**: Auto-proceed after 10 seconds
+4. **80% Traffic**: Auto-proceed after 10 seconds
+5. **100% Traffic**: Full rollout complete
 
 ### Disable Rollouts
 

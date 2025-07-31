@@ -23,7 +23,7 @@ spec:
         - name: rollouts.enabled
           value: "true"
         - name: rollouts.strategy
-          value: "blueGreen"
+          value: "canary"
   destination:
     server: https://kubernetes.default.svc
     namespace: version-checker
