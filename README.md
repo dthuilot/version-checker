@@ -1,15 +1,25 @@
 # Version Checker - V1
 
-A modern, containerized web application built with nginx that displays version information with a beautiful blue gradient interface.
+A modern, containerized web application built with nginx that displays version information with a beautiful blue gradient interface. Now featuring **enterprise-grade Kubernetes deployment** with Helm charts and ArgoCD rollouts.
 
 ## 🚀 Features
 
+### Core Application
 - **Modern UI**: Beautiful blue gradient background with animated "V1" text
 - **Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
 - **Security**: Built with security best practices including non-root user and security headers
 - **Performance**: Optimized nginx configuration with gzip compression and caching
-- **Health Checks**: Built-in health monitoring endpoints
-- **Containerized**: Ready-to-deploy Docker container
+- **Health Checks**: Built-in health monitoring endpoints (`/health`)
+- **Favicon Support**: Proper favicon handling to prevent 404 errors
+
+### Enterprise Deployment (NEW!)
+- **Helm Charts**: Production-ready Kubernetes deployment with Helm 3
+- **ArgoCD Rollouts**: Blue-Green and Canary deployment strategies
+- **GitOps Workflow**: Complete ArgoCD integration for continuous deployment
+- **Auto-scaling**: Horizontal Pod Autoscaling support
+- **Analysis Templates**: Automated rollout analysis and health checks
+- **Ingress Support**: External access configuration with TLS
+- **Monitoring Integration**: Prometheus-compatible metrics and analysis
 
 ## 🏗️ Architecture
 
@@ -20,24 +30,54 @@ A modern, containerized web application built with nginx that displays version i
 
 ## 📋 Prerequisites
 
+### For Docker Deployment
 - Docker
 - Docker Compose
 - Make (optional, for convenience commands)
 
+### For Kubernetes Deployment (NEW!)
+- Kubernetes cluster (1.19+)
+- Helm 3.2.0+
+- ArgoCD (for GitOps deployment)
+- ArgoCD Rollouts controller (for advanced deployments)
+
 ## 🚀 Quick Start
 
-### Using Docker Compose (Recommended)
+### Option 1: Docker Compose (Simple)
 
 ```bash
 # Build and start the application
 make build
 make run
 
-# Or use docker-compose directly
-docker-compose up -d
+# Test the application
+make test
 ```
 
-### Using Docker directly
+### Option 2: Kubernetes with Helm (Recommended for Production)
+
+```bash
+# Install with Helm
+make helm-install
+
+# Check deployment status
+make helm-status
+
+# Test Kubernetes deployment
+make helm-test
+```
+
+### Option 3: ArgoCD GitOps (Enterprise)
+
+```bash
+# Deploy with ArgoCD (after updating repository URL)
+make argocd-install
+
+# Monitor rollout progress
+kubectl get rollouts -n version-checker -w
+```
+
+### Option 4: Docker Direct
 
 ```bash
 # Build the image
@@ -61,41 +101,63 @@ Once running, access the application at:
 # Show all available commands
 make help
 
-# Build the Docker image
-make build
+# Docker commands
+make build           # Build the Docker image
+make run             # Start the application
+make stop            # Stop the application
+make logs            # View logs
+make test            # Test the application
+make clean           # Clean up containers and images
+make shell           # Open shell in running container
 
-# Start the application
-make run
+# Helm commands (NEW!)
+make helm-install    # Install the Helm chart
+make helm-uninstall  # Uninstall the Helm chart
+make helm-upgrade    # Upgrade the Helm chart
+make helm-status     # Check Helm deployment status
+make helm-test       # Test Helm deployment
+make helm-lint       # Lint the Helm chart
+make helm-package    # Package the Helm chart
 
-# Stop the application
-make stop
-
-# View logs
-make logs
-
-# Test the application
-make test
-
-# Clean up containers and images
-make clean
-
-# Open shell in running container
-make shell
+# ArgoCD commands (NEW!)
+make argocd-install  # Install ArgoCD application
+make argocd-status   # Check ArgoCD application status
 ```
 
 ### Project Structure
 
 ```
 version-checker/
-├── Dockerfile              # Multi-stage Docker build
-├── docker-compose.yml      # Docker Compose configuration
-├── nginx.conf             # Custom nginx configuration
-├── html/
-│   └── index.html         # Main application page
-├── .dockerignore          # Docker build context exclusions
-├── .gitignore            # Git exclusions
-├── Makefile              # Development convenience commands
-└── README.md             # This file
+├── .github/
+│   └── workflows/
+│       └── docker-publish.yml     # GitHub Actions CI/CD
+├── argocd-bootstrap/               # 🆕 ArgoCD GitOps setup
+│   ├── README.md                   # ArgoCD bootstrap guide
+│   └── application.yaml            # ArgoCD Application manifest
+├── helm-chart/                     # 🆕 Kubernetes Helm chart
+│   └── version-checker/
+│       ├── templates/              # Kubernetes manifests
+│       │   ├── _helpers.tpl        # Helm template helpers
+│       │   ├── analysistemplate.yaml # Rollout analysis
+│       │   ├── configmap.yaml      # Nginx configuration
+│       │   ├── hpa.yaml            # Horizontal Pod Autoscaler
+│       │   ├── ingress.yaml        # Ingress configuration
+│       │   ├── rollout.yaml        # ArgoCD Rollout (Canary/Blue-Green)
+│       │   ├── service.yaml        # Kubernetes Service
+│       │   └── serviceaccount.yaml # Service Account
+│       ├── Chart.yaml              # Chart metadata
+│       ├── README.md               # Chart documentation
+│       └── values.yaml             # Configuration values
+├── html/                           # Static web content
+│   ├── favicon.ico                 # Favicon file (prevents 404s)
+│   └── index.html                  # Main application page
+├── .gitignore                      # Git exclusions
+├── Dockerfile                      # Multi-stage Docker build
+├── HELM_DEPLOYMENT.md              # 🆕 Comprehensive deployment guide
+├── Makefile                        # Development & deployment commands
+├── README.md                       # This file
+├── docker-compose.yml              # Docker Compose configuration
+└── nginx.conf                      # Custom nginx configuration
 ```
 
 ## 🔧 Configuration
@@ -115,59 +177,173 @@ ports:
 
 ## 🔒 Security Features
 
-- **Security headers**: X-Frame-Options, X-XSS-Protection, etc.
+### Application Security
+- **Security headers**: X-Frame-Options, X-XSS-Protection, Content-Security-Policy
 - **Minimal base image**: Alpine Linux for reduced attack surface
+- **Non-root execution**: Containers run as nginx user (UID 101)
 - **Health checks**: Built-in monitoring for container health
+- **Favicon handling**: Prevents 404 errors and log noise
+
+### Kubernetes Security (Helm Chart)
+- **Security contexts**: Dropped capabilities and read-only root filesystem options
+- **Service accounts**: Minimal RBAC permissions
+- **Pod security**: Non-root containers with security context enforcement
+- **Network policies**: Ready for network segmentation (can be enabled)
+- **Resource limits**: CPU and memory constraints to prevent resource exhaustion
 
 ## 📊 Monitoring
 
-### Health Check Endpoint
+### Health Check Endpoints
 
-The application provides a health check endpoint at `/health` that returns a simple "healthy" response.
+- **Health Check**: `/health` - Returns simple "healthy" response
+- **Favicon**: `/favicon.ico` - Properly cached favicon to prevent 404s
 
-### Logs
+### Docker Logs
 
-Access logs are available through:
 ```bash
 # Docker Compose
+make logs
 docker-compose logs -f
 
 # Direct Docker
 docker logs -f version-checker
 ```
 
-## 🧪 Testing
+### Kubernetes Monitoring (Helm Chart)
 
-Run the built-in tests:
 ```bash
-make test
+# Check deployment status
+make helm-status
+kubectl get all -n version-checker
+
+# View pod logs
+kubectl logs -l app.kubernetes.io/name=version-checker -n version-checker
+
+# Monitor rollout progress (with ArgoCD Rollouts)
+kubectl argo rollouts get rollout version-checker -n version-checker --watch
 ```
 
-This will:
-1. Check the health endpoint
-2. Verify the main page loads correctly
+### Analysis Templates (ArgoCD Rollouts)
+
+The Helm chart includes automated analysis templates for:
+- **Success Rate Analysis**: HTTP response code monitoring
+- **Response Time Analysis**: 95th percentile latency tracking  
+- **Health Check Analysis**: Simple endpoint validation
+
+### Prometheus Integration
+
+The chart supports Prometheus metrics collection for advanced monitoring and analysis during rollouts.
+
+## 🧪 Testing
+
+### Docker Testing
+```bash
+# Run built-in tests
+make test
+
+# This will:
+# 1. Check the health endpoint
+# 2. Verify the main page loads correctly
+# 3. Test favicon accessibility
+```
+
+### Kubernetes Testing  
+```bash
+# Test Helm deployment
+make helm-test
+
+# Manual testing
+kubectl port-forward service/version-checker 8080:80 -n version-checker
+curl http://localhost:8080/health
+curl http://localhost:8080/favicon.ico
+```
+
+### ArgoCD Rollout Testing
+```bash
+# Test canary deployments
+kubectl argo rollouts set image version-checker version-checker=version-checker:v1.1.0 -n version-checker
+
+# Monitor analysis
+kubectl get analysisruns -n version-checker
+
+# Promote if healthy
+kubectl argo rollouts promote version-checker -n version-checker
+```
 
 ## 🚀 Deployment
 
-### Production Deployment
+### Traditional Docker Deployment
 
 1. Build the production image:
    ```bash
    docker build -t version-checker:latest .
    ```
 
-2. Deploy with your preferred orchestration tool (Kubernetes, Docker Swarm, etc.)
+2. Push to registry:
+   ```bash
+   # Tag for your registry
+   docker tag version-checker:latest your-registry/version-checker:v1
+   
+   # Push to registry
+   docker push your-registry/version-checker:v1
+   ```
 
-### Docker Registry
+### Kubernetes Deployment with Helm (Recommended)
 
-To push to a registry:
-```bash
-# Tag for your registry
-docker tag version-checker:latest your-registry/version-checker:v1
+1. **Install the Helm chart**:
+   ```bash
+   # Install with default values
+   make helm-install
+   
+   # Or install with custom values
+   helm install version-checker ./helm-chart/version-checker -f custom-values.yaml
+   ```
 
-# Push to registry
-docker push your-registry/version-checker:v1
-```
+2. **Configure for your environment**:
+   ```bash
+   # Enable ingress
+   helm upgrade version-checker ./helm-chart/version-checker \
+     --set ingress.enabled=true \
+     --set ingress.hosts[0].host=version-checker.yourdomain.com
+   
+   # Enable auto-scaling
+   helm upgrade version-checker ./helm-chart/version-checker \
+     --set autoscaling.enabled=true \
+     --set autoscaling.maxReplicas=10
+   ```
+
+### ArgoCD GitOps Deployment (Enterprise)
+
+1. **Setup ArgoCD and Rollouts**:
+   ```bash
+   # Install ArgoCD Rollouts
+   kubectl create namespace argo-rollouts
+   kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+   ```
+
+2. **Deploy with ArgoCD**:
+   ```bash
+   # Update repository URL in argocd-bootstrap/application.yaml
+   # Then apply the ArgoCD application
+   kubectl apply -f argocd-bootstrap/application.yaml
+   ```
+
+3. **Monitor deployments**:
+   ```bash
+   # Check rollout status
+   kubectl argo rollouts get rollout version-checker -n version-checker
+   
+   # Promote canary deployment
+   kubectl argo rollouts promote version-checker -n version-checker
+   ```
+
+### Deployment Strategies Available
+
+- **Canary Deployment** (Default): Progressive traffic shifting (20% → 40% → 60% → 80% → 100%)
+- **Blue-Green Deployment**: Zero-downtime deployments with manual promotion
+- **Regular Deployment**: Standard Kubernetes deployment without rollouts
+
+For detailed deployment documentation, see **[HELM_DEPLOYMENT.md](HELM_DEPLOYMENT.md)**.
 
 ## 🔄 Version Management
 

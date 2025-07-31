@@ -11,6 +11,7 @@ version-checker/
 ├── Makefile                   # Build and deployment automation
 ├── nginx.conf                 # Nginx configuration
 ├── html/                      # Static web content
+│   ├── favicon.ico            # Favicon file (prevents 404s)
 │   └── index.html
 ├── helm-chart/                # 🆕 Helm chart for Kubernetes deployment
 │   └── version-checker/
