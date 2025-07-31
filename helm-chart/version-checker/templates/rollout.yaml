@@ -1,0 +1,203 @@
+{{- if .Values.rollouts.enabled }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "version-checker.fullname" . }}
+  labels:
+    {{- include "version-checker.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    {{- if eq .Values.rollouts.strategy "blueGreen" }}
+    blueGreen:
+      activeService: {{ include "version-checker.fullname" . }}
+      previewService: {{ include "version-checker.fullname" . }}-preview
+      autoPromotionEnabled: {{ .Values.rollouts.blueGreen.autoPromotionEnabled }}
+      scaleDownDelaySeconds: {{ .Values.rollouts.blueGreen.scaleDownDelaySeconds }}
+      {{- if .Values.rollouts.blueGreen.prePromotionAnalysis }}
+      prePromotionAnalysis:
+        {{- toYaml .Values.rollouts.blueGreen.prePromotionAnalysis | nindent 8 }}
+      {{- end }}
+      {{- if .Values.rollouts.blueGreen.postPromotionAnalysis }}
+      postPromotionAnalysis:
+        {{- toYaml .Values.rollouts.blueGreen.postPromotionAnalysis | nindent 8 }}
+      {{- end }}
+    {{- else if eq .Values.rollouts.strategy "canary" }}
+    canary:
+      replicas: {{ .Values.rollouts.canary.replicas | quote }}
+      maxUnavailable: {{ .Values.rollouts.canary.maxUnavailable }}
+      maxSurge: {{ .Values.rollouts.canary.maxSurge | quote }}
+      steps:
+        {{- toYaml .Values.rollouts.canary.steps | nindent 8 }}
+    {{- end }}
+  selector:
+    matchLabels:
+      {{- include "version-checker.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "version-checker.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "version-checker.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          {{- if .Values.healthCheck.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.healthCheck.timeoutSeconds }}
+            periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+            successThreshold: {{ .Values.healthCheck.successThreshold }}
+            failureThreshold: {{ .Values.healthCheck.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.healthCheck.timeoutSeconds }}
+            periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+            successThreshold: {{ .Values.healthCheck.successThreshold }}
+            failureThreshold: {{ .Values.healthCheck.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.env }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: {{ include "version-checker.fullname" . }}-nginx-config
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- else }}
+# Fallback to regular Deployment if rollouts are disabled
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "version-checker.fullname" . }}
+  labels:
+    {{- include "version-checker.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "version-checker.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "version-checker.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "version-checker.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          {{- if .Values.healthCheck.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.healthCheck.timeoutSeconds }}
+            periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+            successThreshold: {{ .Values.healthCheck.successThreshold }}
+            failureThreshold: {{ .Values.healthCheck.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.healthCheck.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.healthCheck.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.healthCheck.timeoutSeconds }}
+            periodSeconds: {{ .Values.healthCheck.periodSeconds }}
+            successThreshold: {{ .Values.healthCheck.successThreshold }}
+            failureThreshold: {{ .Values.healthCheck.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.env }}
+          env:
+            {{- range $key, $value := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: {{ include "version-checker.fullname" . }}-nginx-config
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
