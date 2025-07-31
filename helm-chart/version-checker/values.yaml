@@ -203,11 +203,19 @@ nginx:
                 try_files $uri $uri/ /index.html;
             }
 
-            # Health check endpoint
-            location /health {
-                access_log off;
-                return 200 "healthy\n";
-                add_header Content-Type text/plain;
-            }
+                    # Health check endpoint
+        location /health {
+            access_log off;
+            return 200 "healthy\n";
+            add_header Content-Type text/plain;
+        }
+
+        # Favicon handling - prevent 404 errors if favicon is missing
+        location = /favicon.ico {
+            access_log off;
+            log_not_found off;
+            expires 1y;
+            try_files $uri =204;
+        }
         }
     }
