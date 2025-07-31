@@ -1,0 +1,18 @@
+apiVersion: v2
+name: version-checker
+description: A Helm chart for Version Checker application with ArgoCD Rollouts
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+home: https://github.com/your-org/version-checker
+maintainers:
+  - name: DevOps Team
+    email: devops@your-org.com
+keywords:
+  - version-checker
+  - nginx
+  - argocd
+  - rollouts
+sources:
+  - https://github.com/your-org/version-checker
+dependencies: []

@@ -1,0 +1,83 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: version-checker
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app.kubernetes.io/name: version-checker
+    app.kubernetes.io/part-of: version-checker
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-org/version-checker.git
+    targetRevision: helm-argocd-rollouts
+    path: helm-chart/version-checker
+    helm:
+      valueFiles:
+        - values.yaml
+      parameters:
+        - name: image.tag
+          value: "1.0.0"
+        - name: rollouts.enabled
+          value: "true"
+        - name: rollouts.strategy
+          value: "canary"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: version-checker
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  revisionHistoryLimit: 3
+---
+# AppProject for version-checker (optional - can use default project)
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: version-checker-project
+  namespace: argocd
+spec:
+  description: Project for version-checker application
+  sourceRepos:
+    - 'https://github.com/your-org/version-checker.git'
+  destinations:
+    - namespace: 'version-checker'
+      server: https://kubernetes.default.svc
+    - namespace: 'version-checker-*'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: ''
+      kind: '*'
+    - group: 'apps'
+      kind: '*'
+    - group: 'argoproj.io'
+      kind: '*'
+    - group: 'networking.k8s.io'
+      kind: '*'
+    - group: 'autoscaling'
+      kind: '*'
+  roles:
+    - name: admin
+      description: Full access to version-checker project
+      policies:
+        - p, proj:version-checker-project:admin, applications, *, version-checker-project/*, allow
+        - p, proj:version-checker-project:admin, repositories, *, *, allow
+      groups:
+        - version-checker-admins
