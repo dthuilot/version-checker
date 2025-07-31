@@ -1,4 +1,4 @@
-.PHONY: help build run stop clean logs shell test helm-install helm-uninstall helm-upgrade helm-status helm-test helm-lint helm-package
+.PHONY: help build run stop clean logs shell test helm-install helm-uninstall helm-upgrade helm-status helm-test helm-lint helm-package argocd-install argocd-status
 
 # Default target
 help:
@@ -19,6 +19,10 @@ help:
 	@echo "  helm-test     - Test Helm deployment"
 	@echo "  helm-lint     - Lint the Helm chart"
 	@echo "  helm-package  - Package the Helm chart"
+	@echo ""
+	@echo "ArgoCD commands:"
+	@echo "  argocd-install- Install ArgoCD application"
+	@echo "  argocd-status - Check ArgoCD application status"
 
 # Build the Docker image
 build:
